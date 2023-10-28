@@ -4,9 +4,13 @@ import { env } from "~/env.mjs";
 
 export default {
   schema: "./src/server/db/schema.ts",
-  driver: "mysql2",
+  driver: "pg",
   dbCredentials: {
-    connectionString: env.DATABASE_URL,
+    host: env.POSTGRES_HOST,
+    port: env.POSTGRES_PORT,
+    user: env.POSTGRES_USER,
+    password: env.POSTGRES_PASSWORD,
+    database: env.POSTGRES_DATABASE,
+    ssl: true,
   },
-  tablesFilter: ["gc.hyzyla.dev_*"],
 } satisfies Config;
