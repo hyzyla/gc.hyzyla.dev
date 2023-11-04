@@ -13,31 +13,6 @@ export async function getUserAccount(user: User, provider = "github") {
   });
 }
 
-export async function updateUserAccountTokens(options: {
-  userId: string;
-  privderAccountId: string;
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  refreshTokenExpiresIn: number;
-}) {
-  return await db
-    .update(schema.accounts)
-    .set({
-      access_token: options.accessToken,
-      refresh_token: options.refreshToken,
-      expires_at: options.expiresAt,
-      refresh_token_expires_in: options.refreshTokenExpiresIn,
-    })
-    .where(
-      and(
-        eq(schema.accounts.userId, options.userId),
-        eq(schema.accounts.providerAccountId, options.privderAccountId),
-      ),
-    );
-}
-
 export const queries = {
   getUserAccount,
-  updateUserAccountTokens,
 };

@@ -4,6 +4,11 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { GithubClient } from "~/server/client";
 
 export const repositoryRouter = createTRPCRouter({
+  isIntegrationInstalled: protectedProcedure.query(({ ctx }) => {
+    const client = new GithubClient(ctx.session.user);
+    return client.isIntegrationInstalled();
+  }),
+
   getRepositories: protectedProcedure.query(async ({ ctx }) => {
     const client = new GithubClient(ctx.session.user);
     return await client.getRepositories();
