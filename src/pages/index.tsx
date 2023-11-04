@@ -34,6 +34,211 @@ export default function Page() {
   );
 }
 
+function MainScreen() {
+  const { data: sessionData } = useSession();
+  const user = sessionData?.user;
+
+  const getIntegrationQuery = api.repository.isIntegrationInstalled.useQuery(
+    undefined,
+    {
+      enabled: user !== undefined,
+    },
+  );
+
+  const getRepositoriesQuery = api.repository.getRepositories.useQuery(
+    undefined,
+    {
+      enabled: user !== undefined && getIntegrationQuery.isSuccess,
+    },
+  );
+
+  // ask user to login
+  if (!user) {
+    return (
+      <Layout>
+        <div className="flex flex-col space-y-6 pt-10 text-sm">
+          <p>
+            You need to sign in to your Github account to use this application:
+          </p>
+          <div className="flex flex-row justify-end">
+            <Button className="max-w-32 w-32" onClick={() => void signIn()}>
+              Sign in
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // ask user to install integration
+  if (!getIntegrationQuery.data) {
+    return (
+      <Layout>
+        <IntegrationScreen
+          isLoading={getIntegrationQuery.isLoading}
+          isError={getIntegrationQuery.isError}
+          data={getIntegrationQuery.data}
+        />
+      </Layout>
+    );
+  }
+
+  // show repositories
+  return (
+    <Layout>
+      <RepositoriesScreen
+        user={user}
+        isLoading={getRepositoriesQuery.isLoading}
+        isError={getRepositoriesQuery.isError}
+        data={getRepositoriesQuery.data}
+        refresh={getRepositoriesQuery.refetch}
+      />
+    </Layout>
+  );
+}
+
+function IntegrationScreen(props: {
+  isLoading: boolean;
+  isError: boolean;
+  data: boolean | undefined;
+}) {
+  if (props.isLoading) {
+    return (
+      <p className="py-10 text-sm text-muted-foreground">
+        Checking if Github integration is installed...
+      </p>
+    );
+  }
+  if (props.isError) {
+    return <p className="py-10 text-sm text-muted-foreground">Errror</p>;
+  }
+
+  return (
+    <div className="flex flex-col space-y-2 py-10">
+      <p>You need to install the Github integration first:</p>
+      <Button
+        onClick={() => {
+          window.open(
+            "https://github.com/apps/fork-cleaner/installations/new",
+            "_blank",
+          );
+        }}
+      >
+        Install
+      </Button>
+    </div>
+  );
+}
+
+function RepositoriesScreen(props: {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  };
+  isLoading: boolean;
+  isError: boolean;
+  data: RouterOutputs["repository"]["getRepositories"] | undefined;
+  refresh: () => void;
+}) {
+  const { user, isLoading, isError, data } = props;
+  const [selected, setSelected] = useState<Repository[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+
+  const [showDeleteScreen, setShowDeleteScreen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <p className="py-10 text-sm text-muted-foreground">
+        Loading repositories for{" "}
+        <span className="font-medium">{user.name}</span>...
+      </p>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="flex flex-col space-y-2">
+        <p className="text-muted-empty">Error</p>
+      </div>
+    );
+  }
+
+  const onSelectRepository = (repository: Repository) => {
+    const index = selected.findIndex((node) => node.id === repository.id);
+    if (index === -1) {
+      setSelected([...selected, repository]);
+    } else {
+      setSelected([
+        ...selected.slice(0, index),
+        ...selected.slice(index + 1, selected.length),
+      ]);
+    }
+  };
+
+  const onDeleteSelectedRepository = () => {
+    setShowDeleteScreen(true);
+  };
+
+  const onDeleteDone = (deleted: Repository[]) => {
+    setShowDeleteScreen(false);
+    setSelected([]);
+    setDeletedIds(deleted.map((repository) => repository.id));
+    props.refresh();
+  };
+
+  const onClearSelectedRepository = () => {
+    setSelected([]);
+  };
+
+  if (showDeleteScreen) {
+    return <DeleteScreen repositories={selected} onDone={onDeleteDone} />;
+  }
+
+  const repositories = data.viewer.repositories.nodes
+    .filter((repository) => repository.isFork)
+    .filter((repository) => !deletedIds.includes(repository.id));
+
+  if (repositories.length === 0) {
+    return (
+      <p className="py-10">
+        There are no forks to delete for{" "}
+        <span className="font-bold">{user.name}</span> 🎉
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <div>
+        {repositories.map((repository) => (
+          <RepositoryRow
+            key={repository.id}
+            showCheckbox={true}
+            repository={repository}
+            onCheckboxClick={onSelectRepository}
+            isChecked={selected.includes(repository)}
+          />
+        ))}
+      </div>
+      {/* Add delete button to the footer */}
+      {selected.length !== 0 && (
+        <FooterTeleport>
+          <div className="flex flex-row items-center justify-end gap-3">
+            <Button variant="ghost" onClick={onClearSelectedRepository}>
+              Clear
+            </Button>
+            <Button onClick={onDeleteSelectedRepository}>
+              Delete ({selected.length})
+            </Button>
+          </div>
+        </FooterTeleport>
+      )}
+    </div>
+  );
+}
+
 function DeleteRepositoryRow(props: { repository: Repository }) {
   return (
     <motion.div
@@ -188,115 +393,6 @@ function FooterTeleport(props: { children: React.ReactNode }) {
   );
 }
 
-function RepositoriesScreen(props: {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  };
-  isLoading: boolean;
-  isError: boolean;
-  data: RouterOutputs["repository"]["getRepositories"] | undefined;
-  refresh: () => void;
-}) {
-  const { user, isLoading, isError, data } = props;
-  const [selected, setSelected] = useState<Repository[]>([]);
-  const [deletedIds, setDeletedIds] = useState<string[]>([]);
-
-  const [showDeleteScreen, setShowDeleteScreen] = useState(false);
-
-  if (isLoading) {
-    return (
-      <p className="py-10 text-sm text-muted-foreground">
-        Loading repositories for{" "}
-        <span className="font-medium">{user.name}</span>...
-      </p>
-    );
-  }
-
-  if (isError || !data) {
-    return (
-      <div className="flex flex-col space-y-2">
-        <p className="text-muted-empty">Error</p>
-      </div>
-    );
-  }
-
-  const onSelectRepository = (repository: Repository) => {
-    const index = selected.findIndex((node) => node.id === repository.id);
-    if (index === -1) {
-      setSelected([...selected, repository]);
-    } else {
-      setSelected([
-        ...selected.slice(0, index),
-        ...selected.slice(index + 1, selected.length),
-      ]);
-    }
-  };
-
-  const onDeleteSelectedRepository = () => {
-    setShowDeleteScreen(true);
-  };
-
-  const onDeleteDone = (deleted: Repository[]) => {
-    setShowDeleteScreen(false);
-    setSelected([]);
-    setDeletedIds(deleted.map((repository) => repository.id));
-    props.refresh();
-  };
-
-  const onClearSelectedRepository = () => {
-    setSelected([]);
-  };
-
-  if (showDeleteScreen) {
-    return <DeleteScreen repositories={selected} onDone={onDeleteDone} />;
-  }
-
-  const repositories = data.viewer.repositories.nodes
-    .filter((repository) => repository.isFork)
-    .filter((repository) => !deletedIds.includes(repository.id));
-
-  if (repositories.length === 0) {
-    return (
-      <p className="py-10">
-        There are no forks to delete for{" "}
-        <span className="font-bold">{user.name}</span> 🎉
-      </p>
-    );
-  }
-
-  return (
-    <div>
-      <div>
-        {repositories.map((repository) => (
-          <RepositoryRow
-            key={repository.id}
-            showCheckbox={true}
-            repository={repository}
-            onCheckboxClick={onSelectRepository}
-            isChecked={selected.includes(repository)}
-          />
-        ))}
-      </div>
-      {/* Add delete button to the footer */}
-      {selected.length !== 0 && (
-        <FooterTeleport>
-          <div className="flex flex-row items-center justify-end gap-3">
-            <Button variant="ghost" onClick={onClearSelectedRepository}>
-              Clear
-            </Button>
-            <Button onClick={onDeleteSelectedRepository}>
-              Delete ({selected.length})
-            </Button>
-          </div>
-        </FooterTeleport>
-      )}
-    </div>
-  );
-}
-
 function Layout({ children }: { children: React.ReactNode }) {
   const { data: sessionData } = useSession();
   return (
@@ -327,101 +423,5 @@ function Layout({ children }: { children: React.ReactNode }) {
         </CardFooter>
       </Card>
     </div>
-  );
-}
-
-function IntegrationScreen(props: {
-  isLoading: boolean;
-  isError: boolean;
-  data: boolean | undefined;
-}) {
-  if (props.isLoading) {
-    return (
-      <p className="py-10 text-sm text-muted-foreground">
-        Checking if Github integration is installed...
-      </p>
-    );
-  }
-  if (props.isError) {
-    return <p className="py-10 text-sm text-muted-foreground">Errror</p>;
-  }
-
-  return (
-    <div className="flex flex-col space-y-2 py-10">
-      <p>You need to install the Github integration first:</p>
-      <Button
-        onClick={() => {
-          window.open(
-            "https://github.com/apps/fork-cleaner/installations/new",
-            "_blank",
-          );
-        }}
-      >
-        Install
-      </Button>
-    </div>
-  );
-}
-
-function MainScreen() {
-  const { data: sessionData } = useSession();
-  const user = sessionData?.user;
-
-  const getIntegrationQuery = api.repository.isIntegrationInstalled.useQuery(
-    undefined,
-    {
-      enabled: user !== undefined,
-    },
-  );
-
-  const getRepositoriesQuery = api.repository.getRepositories.useQuery(
-    undefined,
-    {
-      enabled: user !== undefined && getIntegrationQuery.isSuccess,
-    },
-  );
-
-  // ask user to login
-  if (!user) {
-    return (
-      <Layout>
-        <div className="flex flex-col space-y-6 pt-10 text-sm">
-          <p>
-            You need to sign in to your Github account to use this application:
-          </p>
-          <div className="flex flex-row justify-end">
-            <Button className="max-w-32 w-32" onClick={() => void signIn()}>
-              Sign in
-            </Button>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  // ask user to install integration
-  if (!getIntegrationQuery.data) {
-    return (
-      <Layout>
-        <IntegrationScreen
-          isLoading={getIntegrationQuery.isLoading}
-          isError={getIntegrationQuery.isError}
-          data={getIntegrationQuery.data}
-        />
-      </Layout>
-    );
-  }
-
-  // show repositories
-  return (
-    <Layout>
-      <RepositoriesScreen
-        user={user}
-        isLoading={getRepositoriesQuery.isLoading}
-        isError={getRepositoriesQuery.isError}
-        data={getRepositoriesQuery.data}
-        refresh={getRepositoriesQuery.refetch}
-      />
-    </Layout>
   );
 }
