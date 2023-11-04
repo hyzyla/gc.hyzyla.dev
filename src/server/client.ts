@@ -16,19 +16,6 @@ export class GithubClient {
       (installation) => installation.app_id == env.GITHUB_APP_ID,
     );
     return !!exists;
-
-    // const client = new Octokit({
-    //   authStrategy: createAppAuth,
-    //   auth: {
-    //     appId: 1,
-    //     privateKey: "-----BEGIN PRIVATE KEY-----\n...",
-    //     installationId: 123,
-    //   },
-    // });
-    // console.log(await client.rest.apps.getAuthenticated());
-    // const response = await client.rest.apps.getUserInstallation();
-    // console.log("response", response);
-    // return true;
   }
 
   async getClient(): Promise<Octokit> {
@@ -84,7 +71,7 @@ export class GithubClient {
     }>(`
       query {
         viewer {
-          repositories(first: 100, affiliations: [OWNER]) {
+          repositories(first: 100, affiliations: [OWNER], isFork: true) {
             nodes {
               id
               url
