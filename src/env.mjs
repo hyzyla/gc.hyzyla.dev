@@ -28,7 +28,6 @@ export const env = createEnv({
     ),
     // Add ` on ID and SECRET if you want to make sure they're not empty
     GITHUB_APP_ID: z.number({ coerce: true }),
-    GITHUB_PRIVATE_KEY: z.string(),
     GITHUB_CLIENT_ID: z.string(),
     GITHUB_CLIENT_SECRET: z.string(),
   },
@@ -57,7 +56,6 @@ export const env = createEnv({
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
     GITHUB_APP_ID: process.env.GITHUB_APP_ID,
-    GITHUB_PRIVATE_KEY: process.env.GITHUB_PRIVATE_KEY,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
   },
