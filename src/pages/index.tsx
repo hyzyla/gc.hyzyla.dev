@@ -1,7 +1,7 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "~/components/ui/button";
 import {
@@ -25,11 +25,8 @@ export default function Page() {
   return (
     <>
       <Head>
-        <title>Github cleaner</title>
-        <meta
-          name="description"
-          content="Remove your Github projects in bulk"
-        />
+        <title>Github forks cleaner</title>
+        <meta name="description" content="Remove github forks in bulk" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <MainScreen />
@@ -58,19 +55,26 @@ function DeleteScreen(props: {
   repositories: Repository[];
   onDone: (deleted: Repository[]) => void;
 }) {
-  const [repositories, setRepositories] = useState(
-    structuredClone(props.repositories),
-  );
+  const repositoriesCloned = structuredClone(props.repositories);
+  const [repositories, setRepositories] = useState(repositoriesCloned);
   const [isCancelling, setIsCancelling] = useState(false);
+  const cancellingRef = React.useRef(false);
 
-  const mutation = api.repository.deleteRepository.useMutation();
+  const mutation = api.repository.deleteRepository.useMutation({});
 
-  // start deleting repositories on mount
+  // start deleting repositories on mount. it called twice on in development, but
+  // I don't know how to fix it without enabling React strict mode
   useEffect(() => {
     const deleted: Repository[] = [];
     const process = async () => {
-      for (const repository of repositories) {
-        if (isCancelling) {
+      for (const [index, repository] of repositories.entries()) {
+        // wait 2 second before deleting the first repository
+        // to give the user a chance to cancel the operation
+        if (index === 0) {
+          await new Promise((r) => setTimeout(r, 2 * 1000));
+        }
+
+        if (cancellingRef.current) {
           break;
         }
 
@@ -84,8 +88,6 @@ function DeleteScreen(props: {
           deleted.push(repository);
         }
 
-        // fake delay
-        // await new Promise((resolve) => setTimeout(resolve, 1000));
         setRepositories((repositories) =>
           repositories.filter((node) => node.id !== repository.id),
         );
@@ -96,6 +98,7 @@ function DeleteScreen(props: {
   }, [props.repositories]);
 
   const onCancelClick = () => {
+    cancellingRef.current = true;
     setIsCancelling(true);
   };
 
@@ -120,8 +123,12 @@ function DeleteScreen(props: {
       <FooterTeleport>
         <div className="flex flex-row items-center justify-end gap-3 pl-3">
           <Progress value={progress} className="animate-pulse" />
-          <Button variant="ghost" onClick={onCancelClick}>
-            Cancel
+          <Button
+            variant="ghost"
+            onClick={onCancelClick}
+            disabled={isCancelling}
+          >
+            {isCancelling ? "Cancelling..." : "Cancel"}
           </Button>
         </div>
       </FooterTeleport>
@@ -247,21 +254,31 @@ function RepositoriesScreen(props: {
     return <DeleteScreen repositories={selected} onDone={onDeleteDone} />;
   }
 
+  const repositories = data.viewer.repositories.nodes
+    .filter((repository) => repository.isFork)
+    .filter((repository) => !deletedIds.includes(repository.id));
+
+  if (repositories.length === 0) {
+    return (
+      <p className="py-10">
+        There are no forks to delete for{" "}
+        <span className="font-bold">{user.name}</span> 🎉
+      </p>
+    );
+  }
+
   return (
     <div>
       <div>
-        {data.viewer.repositories.nodes
-          .filter((repository) => repository.isFork)
-          .filter((repository) => !deletedIds.includes(repository.id))
-          .map((repository) => (
-            <RepositoryRow
-              key={repository.id}
-              showCheckbox={true}
-              repository={repository}
-              onCheckboxClick={onSelectRepository}
-              isChecked={selected.includes(repository)}
-            />
-          ))}
+        {repositories.map((repository) => (
+          <RepositoryRow
+            key={repository.id}
+            showCheckbox={true}
+            repository={repository}
+            onCheckboxClick={onSelectRepository}
+            isChecked={selected.includes(repository)}
+          />
+        ))}
       </div>
       {/* Add delete button to the footer */}
       {selected.length !== 0 && (
@@ -284,7 +301,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const { data: sessionData } = useSession();
   return (
     <div className="flex h-screen max-h-screen flex-col items-center sm:p-4">
-      <Card className="border- grid h-full w-full max-w-xl grid-cols-[1fr] grid-rows-[100px_1fr_80px] overflow-hidden rounded-none border-0 sm:rounded sm:border ">
+      <Card className="grid h-full w-full max-w-xl grid-cols-[1fr] grid-rows-[100px_1fr_80px] overflow-hidden rounded-none border-0 sm:rounded-lg sm:border ">
         <CardHeader className="border-gray-200 shadow">
           <div className="flex flex-row justify-between">
             <CardTitle>Github Cleaner 🧹</CardTitle>
@@ -298,7 +315,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               </Button>
             )}
           </div>
-          <CardDescription>Remove your Github projects in bulk</CardDescription>
+          <CardDescription>Remove your Github forks in bulk</CardDescription>
         </CardHeader>
         <CardContent className="overflow-y-auto">{children}</CardContent>
 
@@ -326,22 +343,16 @@ function IntegrationScreen(props: {
     );
   }
   if (props.isError) {
-    return (
-      <div className="flex flex-col space-y-2">
-        <p className="text-muted-empty">Error</p>
-      </div>
-    );
+    return <p className="py-10 text-sm text-muted-foreground">Errror</p>;
   }
 
   return (
-    <div className="flex flex-col space-y-2">
-      <p className="text-muted-empty">
-        You need to install the Github integration first
-      </p>
+    <div className="flex flex-col space-y-2 py-10">
+      <p>You need to install the Github integration first:</p>
       <Button
         onClick={() => {
           window.open(
-            "https://github.com/apps/github-cleaner/installations/new",
+            "https://github.com/apps/fork-cleaner/installations/new",
             "_blank",
           );
         }}
@@ -366,7 +377,7 @@ function MainScreen() {
   const getRepositoriesQuery = api.repository.getRepositories.useQuery(
     undefined,
     {
-      enabled: user !== undefined && getIntegrationQuery.data,
+      enabled: user !== undefined && getIntegrationQuery.isSuccess,
     },
   );
 
