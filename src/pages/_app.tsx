@@ -19,15 +19,14 @@ const inter = Inter({ subsets: ["latin"] });
 
 // Check that PostHog is client-side (used to handle Next.js SSR)
 if (typeof window !== "undefined") {
-  if (!env.NEXT_PUBLIC_POSTHOG_KEY)
-    posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
-      // Enable debug mode in development
-      loaded: (posthog) => {
-        if (process.env.NODE_ENV === "development") posthog.debug();
-      },
-      capture_pageview: false,
-    });
+  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
+    api_host: env.NEXT_PUBLIC_POSTHOG_HOST,
+    // Enable debug mode in development
+    loaded: (posthog) => {
+      if (process.env.NODE_ENV === "development") posthog.debug();
+    },
+    capture_pageview: false,
+  });
 }
 
 const MyApp: AppType<{ session: Session | null }> = ({
