@@ -6,14 +6,13 @@ import { useRouter } from "next/router";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { useEffect } from "react";
+import Head from "next/head";
 
 import { env } from "~/env.mjs";
 import { cn } from "~/utils";
 import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
-
-// import { cn } from "@/lib/utils";
 
 // If loading a variable font, you don't need to specify the font weight
 const inter = Inter({ subsets: ["latin"] });
@@ -50,6 +49,29 @@ const MyApp: AppType<{ session: Session | null }> = ({
   return (
     <PostHogProvider client={posthog}>
       <SessionProvider session={session}>
+        <Head>
+          <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+          />
+          <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+          />
+          <link rel="manifest" href="/site.webmanifest" />
+          <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+          <meta name="msapplication-TileColor" content="#da532c" />
+          <meta name="theme-color" content="#ffffff" />
+        </Head>
         <main
           // className={cn("min-h-screen font-sans antialiased", inter.className)}
           className={cn("min-h-screen", inter.className)}
