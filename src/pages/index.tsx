@@ -114,7 +114,7 @@ function IntegrationScreen(props: {
       <Button
         onClick={() => {
           window.open(
-            "https://github.com/apps/fork-cleaner/installations/new",
+            "https://github.com/apps/forks-cleaner/installations/new",
             "_blank",
           );
         }}
