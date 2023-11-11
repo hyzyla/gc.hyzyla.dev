@@ -49,6 +49,12 @@ const MyApp: AppType<{ session: Session | null }> = ({
     <PostHogProvider client={posthog}>
       <SessionProvider session={session}>
         <Head>
+          <title>Github Forks Cleaner</title>
+          <meta
+            name="description"
+            content="Service that helps to remove forks"
+          />
+          {/* favicons */}
           <link
             rel="apple-touch-icon"
             sizes="180x180"

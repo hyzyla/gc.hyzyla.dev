@@ -24,11 +24,6 @@ type Repository = GetRepositoryData["viewer"]["repositories"]["nodes"][number];
 export default function Page() {
   return (
     <>
-      <Head>
-        <title>Github Forks Cleaner</title>
-        <meta name="description" content="Service that helps to remove forks" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <MainScreen />
     </>
   );
