@@ -406,7 +406,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             )}
           </div>
           <CardDescription>
-            Service that helps to remove forks from your Github account
+            Remove forks from your Github account
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-y-auto">{children}</CardContent>
