@@ -77,7 +77,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
           <meta name="msapplication-TileColor" content="#da532c" />
           <meta name="theme-color" content="#ffffff" />
         </Head>
-        <main className={cn("min-h-screen", inter.className)}>
+        <main className={cn("min-h-[100dvh]", inter.className)}>
           <Component {...pageProps} />
         </main>
       </SessionProvider>
