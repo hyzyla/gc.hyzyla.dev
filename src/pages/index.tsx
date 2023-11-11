@@ -17,6 +17,7 @@ import { Progress } from "~/components/ui/progress";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { type RouterOutputs, api } from "~/utils/api";
+import { usePostHog } from "posthog-js/react";
 
 type GetRepositoryData = RouterOutputs["repository"]["getRepositories"];
 type Repository = GetRepositoryData["viewer"]["repositories"]["nodes"][number];
@@ -30,6 +31,7 @@ export default function Page() {
 }
 
 function MainScreen() {
+  const posthog = usePostHog();
   const { data: sessionData } = useSession();
   const user = sessionData?.user;
 
@@ -56,7 +58,13 @@ function MainScreen() {
             You need to sign in to your Github account to use this application:
           </p>
           <div className="flex flex-row justify-end">
-            <Button className="max-w-32 w-32" onClick={() => void signIn()}>
+            <Button
+              className="max-w-32 w-32"
+              onClick={() => {
+                posthog.capture("sign-in");
+                void signIn();
+              }}
+            >
               Sign in
             </Button>
           </div>
@@ -97,6 +105,8 @@ function IntegrationScreen(props: {
   isError: boolean;
   data: boolean | undefined;
 }) {
+  const posthog = usePostHog();
+
   if (props.isLoading) {
     return (
       <p className="py-10 text-sm text-muted-foreground">
@@ -113,6 +123,7 @@ function IntegrationScreen(props: {
       <p>You need to install the Github integration first:</p>
       <Button
         onClick={() => {
+          posthog.capture("install-integration");
           window.open(
             "https://github.com/apps/forks-cleaner/installations/new",
             "_blank",
@@ -254,6 +265,7 @@ function DeleteScreen(props: {
   repositories: Repository[];
   onDone: (deleted: Repository[]) => void;
 }) {
+  const posthog = usePostHog();
   const repositoriesCloned = structuredClone(props.repositories);
   const [repositories, setRepositories] = useState(repositoriesCloned);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -265,6 +277,9 @@ function DeleteScreen(props: {
   // I don't know how to fix it without enabling React strict mode
   useEffect(() => {
     const deleted: Repository[] = [];
+    posthog.capture("delete-repositories", {
+      count: props.repositories.length,
+    });
     const process = async () => {
       for (const [index, repository] of repositories.entries()) {
         // wait 2 second before deleting the first repository
