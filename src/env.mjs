@@ -7,11 +7,6 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    POSTGRES_USER: z.string(),
-    POSTGRES_PASSWORD: z.string(),
-    POSTGRES_HOST: z.string(),
-    POSTGRES_PORT: z.number().default(5432),
-    POSTGRES_DATABASE: z.string(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -26,7 +21,6 @@ export const env = createEnv({
       // VERCEL_URL doesn't include `https` so it cant be validated as a URL
       process.env.VERCEL ? z.string() : z.string().url(),
     ),
-    // Add ` on ID and SECRET if you want to make sure they're not empty
     GITHUB_APP_ID: z.number({ coerce: true }),
     GITHUB_CLIENT_ID: z.string(),
     GITHUB_CLIENT_SECRET: z.string(),
@@ -38,7 +32,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_POSTHOG_KEY: z.string(),
+    NEXT_PUBLIC_POSTHOG_HOST: z.string(),
   },
 
   /**
@@ -46,18 +41,16 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
-    POSTGRES_USER: process.env.POSTGRES_USER,
-    POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD,
-    POSTGRES_HOST: process.env.POSTGRES_HOST,
-    POSTGRES_PORT: process.env.POSTGRES_PORT,
-    POSTGRES_DATABASE: process.env.POSTGRES_DATABASE,
-
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+
     GITHUB_APP_ID: process.env.GITHUB_APP_ID,
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+
+    NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

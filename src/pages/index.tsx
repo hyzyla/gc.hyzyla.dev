@@ -25,8 +25,8 @@ export default function Page() {
   return (
     <>
       <Head>
-        <title>Github forks cleaner</title>
-        <meta name="description" content="Remove github forks in bulk" />
+        <title>Github Forks Cleaner</title>
+        <meta name="description" content="Service that helps to remove forks" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <MainScreen />
@@ -132,7 +132,6 @@ function IntegrationScreen(props: {
 
 function RepositoriesScreen(props: {
   user: {
-    id: string;
     name?: string | null;
     email?: string | null;
     image?: string | null;
@@ -400,7 +399,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <Card className="grid h-full w-full max-w-xl grid-cols-[1fr] grid-rows-[100px_1fr_80px] overflow-hidden rounded-none border-0 sm:rounded-lg sm:border ">
         <CardHeader className="border-gray-200 shadow">
           <div className="flex flex-row justify-between">
-            <CardTitle>Github Cleaner 🧹</CardTitle>
+            <CardTitle>Github Forks Cleaner 🧹</CardTitle>
             {sessionData && (
               <Button
                 variant="secondary"
@@ -411,7 +410,9 @@ function Layout({ children }: { children: React.ReactNode }) {
               </Button>
             )}
           </div>
-          <CardDescription>Remove your Github forks in bulk</CardDescription>
+          <CardDescription>
+            Service that helps to remove forks from your Github account
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-y-auto">{children}</CardContent>
 
