@@ -390,7 +390,7 @@ function FooterTeleport(props: { children: React.ReactNode }) {
 function Layout({ children }: { children: React.ReactNode }) {
   const { data: sessionData } = useSession();
   return (
-    <div className="flex h-screen max-h-screen flex-col items-center sm:p-4">
+    <div className="flex h-[100dvh] max-h-[100dvh] flex-col items-center sm:p-4">
       <Card className="grid h-full w-full max-w-xl grid-cols-[1fr] grid-rows-[100px_1fr_80px] overflow-hidden rounded-none border-0 sm:rounded-lg sm:border ">
         <CardHeader className="border-gray-200 shadow">
           <div className="flex flex-row justify-between">
